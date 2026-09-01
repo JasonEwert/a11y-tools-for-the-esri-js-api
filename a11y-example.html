@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>Accessible map example | ArcGIS Maps SDK for JavaScript</title>
+
+    <!-- Load the ArcGIS Maps SDK for JavaScript from CDN -->
+    <script type="module" src="https://js.arcgis.com/5.1/"></script>
+
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+		font-family:  "Calibri", "Helvetica Neue", "Helvetica", "sans-serif";
+      }
+	  #wrapper {
+        pointer-events: none;
+      }
+	  calcite-navigation {
+		--calcite-color-foreground-1: #003966;
+		--calcite-color-text-1: #ffffff;
+	  }
+	  #about {
+		padding-left: 14px;
+		padding-right: 14px;
+	  }
+	  #footer {
+		background: #003966;
+		color: #ffffff;
+		padding-left: 14px;
+	  }
+    </style>
+  </head>
+
+  <body class="calcite-mode-auto"> <!-- calcite-mode-light, calcite-mode-dark-->
+	<calcite-shell>
+	
+		<calcite-navigation slot="header">
+			
+			<calcite-navigation-logo 
+				slot="logo" 
+				heading="A11y map tools for Esri's Maps SDK for JavaScript - version 5"
+				heading-level="1"	
+			> 	
+			</calcite-navigation-logo>
+			
+		</calcite-navigation>
+
+		<calcite-shell-panel slot="panel-start" resizable>
+			<div id="about">
+				<h2>Custom A11y tools for the Esri Maps SDK for JavaScript</h2>
+				<p>Your web map application has access to limitless data, it can query the names, classifications, sizes, and status of all features within its extent. This information is often hidden behind map clicks, drawn as symbols, or written as labels.</p>
+				<p>What if you don't use a mouse? What if you can't see the map? How can we use the data present in our maps to tell a story?</p>
+				<h3>Dynamic map alt text</h3>
+				<p>The map-alt-text.js tool can be used to query state, county, and city names. These data are then used to build a map description. The map description is presented to the user in an aria-live region, ensuring that it is read by the screen reader as the map updates.</p>
+				<p>This example is querying feature services published by Esri. It can be repurposed to query other Esri feature services.</p>
+				<p>In addition to describing the map's content, it provides a description of the map scale. When using the map's default hot keys, the aria-live region is updated with the panning or zooming direction.</p>
+				<h3>Keyboard access to map clicks</h3>
+				<p>In addition to the default hot keys, this tool adds a map click event that's triggered by the enter or space bar keys. This map click is executed at the very center of the map, symbolized by a crosshairs symbol.</p>
+				<p>The crosshairs symbol and hot key instructions are displayed only when the user is using the keyboard to interact with the map. Use of the mouse will remove these visuals.</p>
+				<p>The map's hotkeys are disabled by tabbing off of the map canvas.</p>
+			</div>
+		</calcite-shell-panel>
+			
+		<calcite-panel>
+		
+			<arcgis-map center="-93.25, 45.01" zoom="14"> <!-- Annondale "-94.12, 45.26", Minneapolis "-93.25, 45.01" -->
+			  <arcgis-zoom slot="top-left"></arcgis-zoom>
+			  <arcgis-home slot="top-left"></arcgis-home>
+			  <arcgis-expand slot="top-left" mode="floating">
+				<arcgis-basemap-gallery></arcgis-basemap-gallery>
+			  </arcgis-expand>
+			  <!-- 
+			  	RE: focus-trap-disabled, I can see how forcing the user to x out of this may be the better work flow. 
+				Closing the popup modal sends focus back to the map canvas. tabbing out of the modal sends the user on 
+				a journey through the map's buttons, making closing the modal much less intuitive.  
+			  -->
+			  <arcgis-popup 
+			  	slot="popup" 
+				heading-level="3"
+				auto-closed-enabled
+				hide-action-bar
+				hide-collapse-button
+				hide-feature-menue-heading
+				aria-live="polite"
+			  ></arcgis-popup>
+			</arcgis-map>
+			
+		</calcite-panel>
+		
+		<calcite-panel slot="footer">
+			<div id="footer">
+				<p>These tools were developed by MNIT partnering with the Pollution Control Agency.</p>
+				<p>© 2026 Minnesota Pollution Control Agency</p>
+			</div>
+		</calcite-panel>
+		
+	</calcite-shell>
+    	
+	<script type="module">
+      	  
+	  const [Map, FeatureLayer] = await $arcgis.import([
+        "@arcgis/core/Map.js",
+        "@arcgis/core/layers/FeatureLayer.js",
+		"js/map-alt-text.js",
+		"js/keyboard-nav.js"
+      ]);
+	  
+	  const viewElement = document.querySelector("arcgis-map");
+	  const popupElement = document.querySelector("arcgis-popup");
+	  const featurePanelElement = document.getElementById("feature-panel");
+	  const featureService = "https://pca-gis02.pca.state.mn.us/ArcGIS/rest/services/PRP/PRP/MapServer/0";
+
+
+	  // add a featurelayer to the map
+      const layer = new FeatureLayer({
+        url: featureService,
+        outFields: ["leak_site_name", "leak_site_id", "status", "si_type_desc"],
+		popupEnabled: true,
+		popupTemplate: {
+			title: "{status} {si_type_desc}",
+			content: "{leak_site_name}</br>Site ID: </br>{leak_site_id}",
+			//overwriteActions: true, //Removes the zoom to button , which sits between the popup title and its content.
+		}
+      });
+
+      viewElement.map = new Map({
+        basemap: "gray-vector",
+        layers: [layer],
+      });
+
+	  // popup settings, clean up the popup elements.
+	  // the use of a popup component will overwright this config
+	  viewElement.popup = {
+			dockEnabled: true,
+			dockOptions: {
+				position: "bottom-right",
+				breakpoint: false
+			},
+			visibleElements: {
+				collapseButton: false,
+				actionBar: false,
+				featureMenuHeading: false,
+				featureListLayerTitle: false
+			}
+	  }
+
+
+
+      // wait for the map component to be ready
+      await viewElement.viewOnReady();
+	  	  
+	  // map alt text //
+	  new MapAltText(viewElement);
+
+	  // keyboard access to map clicks //
+	  new KeyboardAssistant(viewElement, popupElement);
+
+	</script>
+	
+	
+  </body>
+</html>
