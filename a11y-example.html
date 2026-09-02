@@ -67,7 +67,7 @@
 			
 		<calcite-panel>
 		
-			<arcgis-map center="-93.25, 45.01" zoom="14"> <!-- Annondale "-94.12, 45.26", Minneapolis "-93.25, 45.01" -->
+			<arcgis-map id="map-component" center="-93.25, 45.01" zoom="14"></arcgis-map> <!-- Annondale "-94.12, 45.26", Minneapolis "-93.25, 45.01" -->
 			  <arcgis-zoom slot="top-left"></arcgis-zoom>
 			  <arcgis-home slot="top-left"></arcgis-home>
 			  <arcgis-expand slot="top-left" mode="floating">
@@ -148,7 +148,15 @@
 			}
 	  }
 
+	  // have to add aria labels programmatically, the arcgis-map component is encapsulated within shadow dom,
+	  // so applying directly to the <arcgis-map> element does not work
+	  // https://developers.arcgis.com/javascript/latest/tutorials/using-view-with-components/
+	  const mapComponent = document.getElementById("map-component");
 
+	  mapComponent.aria = {
+		  label: "Interactive map application.",
+		  description: "Press enter or spacebar to activate keyboard navigation."
+	  };
 
       // wait for the map component to be ready
       await viewElement.viewOnReady();
