@@ -33,12 +33,10 @@ class KeyboardAssistant{
     constructor(myMap, myPopup){
 
         require([
-            "esri/layers/GraphicsLayer",
             "esri/Graphic",
             "esri/geometry/Point",
             "esri/core/reactiveUtils",
         ], (
-            GraphicsLayer,
             Graphic,
             Point,
             reactiveUtils
@@ -49,8 +47,19 @@ class KeyboardAssistant{
             *****************************************************************/
 
             // symbols used by addMapCenterGraphic()
+            const markerSymHalo = {
+                type: "simple-marker", 
+                color: [0, 0, 0, 0],
+                style: 'circle',
+                outline: {
+                    color: [255, 255, 255], 
+                    width: 3
+                },
+                size: 21
+            };
+
             const markerSym = {
-                type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+                type: "simple-marker", 
                 color: [0, 0, 0, 0],
                 style: 'circle',
                 outline: {
@@ -60,23 +69,27 @@ class KeyboardAssistant{
                 size: 20
             };
 
-            const crossSym = {
-                type: "simple-marker", // autocasts as new SimpleMarkerSymbol()
+            const crossSymHalo = {
+                type: "simple-marker", 
                 color: [0,0,0,0],
                 style: 'cross',
                 outline: {
-                    color: [0,0,0], //color: [52,58,64],
-                    width: 1
+                    color: [255,255,255], 
+                    width: 2
                 },
                 size: 10
             };
 
-            const mapCenterGraphic = new GraphicsLayer({
-                id: "mapCenterGraphic",
-                listMode: "hide"
-            });
-
-            myMap.map.add(mapCenterGraphic)
+            const crossSym = {
+                type: "simple-marker", 
+                color: [0,0,0,0],
+                style: 'cross',
+                outline: {
+                    color: [0,0,0], 
+                    width: 1
+                },
+                size: 10
+            };
             
             /*****************************************************************
             * create the instructions div
@@ -115,8 +128,8 @@ class KeyboardAssistant{
                         event.stopPropagation();
                     }
 
-                    // If the center graphic doesn't exist, add teh graphic and hotkey instructions.
-                    if (mapCenterGraphic.graphics.length === 0 && keyPressed != 'I'){
+                    // If the center graphic doesn't exist, add the graphic and hotkey instructions.
+                    if (myMap.graphics.length === 0 && keyPressed != 'I'){
                         addMapCenterGraphic();
                         myMap.view.ui.add(userNoteInfo, "top-right");
                     }
@@ -167,7 +180,7 @@ class KeyboardAssistant{
 
                     // shift-i removes the map center graphic and keyboard instructions
                     if( keyPressed == "I" ){
-                        mapCenterGraphic.removeAll();
+                        myMap.graphics.removeAll();
                         myMap.view.ui.remove(userNoteInfo);
                         return;
                     }
@@ -186,37 +199,30 @@ class KeyboardAssistant{
                           
                         // if a popup component is passed in, use it.
                         if (myPopup){
-                            //myPopup.location = myMap.view.center
-                            //myPopup.fetchFeatures = true
-                            //myPopup.defaultPopupTemplateEnabled = true
-                            //myPopup.open = true
-
-                            //myPopup.features = myMap.fetchPopupFeatures(myMap.view.center)
-                            //console.log(myPopup.features)
-                            //myPopup.open = myPopup.features ? true : false
+                        
                             openPopup ()
 
                         } else {
+
                             myMap.view.openPopup({
                                 location: myMap.view.center,
                                 fetchFeatures: true
                             })
-                        }
-                        
 
-                        
+                        }
+        
                     } 
                 }
             });
 
             // turn off keyboard tools if the mouse is used
             myMap.view.on("click", () => {
-                mapCenterGraphic.removeAll();
+                myMap.graphics.removeAll();
                 myMap.view.ui.remove(userNoteInfo);  
             });
 
             myMap.view.on("drag", () => {
-                mapCenterGraphic.removeAll();
+                myMap.graphics.removeAll();
                 myMap.view.ui.remove(userNoteInfo);
             });
 
@@ -228,7 +234,7 @@ class KeyboardAssistant{
                 () => myMap.view.stationary,
                 (response) => {
                     if(response === true){
-                        if (mapCenterGraphic.graphics.length > 0){
+                        if (myMap.graphics.length > 0){
                             addMapCenterGraphic();
                         }
                     }
@@ -251,14 +257,24 @@ class KeyboardAssistant{
                 };
                 
                 // clean up the graphics layer and add a new graphic at the maps new center
-                mapCenterGraphic.removeAll();
+                myMap.graphics.removeAll();
 
-                mapCenterGraphic.add(new Graphic({
+                myMap.graphics.add(new Graphic({
+                    geometry: point,
+                    symbol: markerSymHalo
+                }));
+
+                myMap.graphics.add(new Graphic({
                     geometry: point,
                     symbol: markerSym
                 }));
 
-                mapCenterGraphic.add(new Graphic({
+                myMap.graphics.add(new Graphic({
+                    geometry: point,
+                    symbol: crossSymHalo
+                }));
+
+                myMap.graphics.add(new Graphic({
                     geometry: point,
                     symbol: crossSym
                 })); 
